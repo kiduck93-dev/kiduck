@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한화생명 손익 성과 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #F7F6F3;
+    --surface:  #FFFFFF;
+    --surface2: #F1EFF9;
+    --border:   #E8E5E0;
+    --text1:    #1A1A2E;
+    --text2:    #4A4A6A;
+    --text3:    #8A8AAA;
+
+    --blue:   #2B5BE2;
+    --blue-l: #EEF2FF;
+    --blue-m: #C7D4FA;
+
+    --green:  #0A8754;
+    --green-l:#EDFAF4;
+    --green-m:#A8E6CB;
+
+    --amber:  #D97706;
+    --amber-l:#FFFBEB;
+    --amber-m:#FCD34D;
+
+    --red:    #DC2626;
+    --red-l:  #FEF2F2;
+    --red-m:  #FECACA;
+
+    --r:8px;
+    --r2:12px;
+    --r3:16px;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+    --shadow2: 0 4px 16px rgba(0,0,0,.08), 0 1px 4px rgba(0,0,0,.04);
+  }
+
+  html { font-family:'Noto Sans KR',sans-serif; font-size:14px; background:var(--bg); color:var(--text1); }
+  body { min-height:100vh; }
+
+  /* ── LAYOUT ── */
+  .wrap  { max-width:1200px; margin:0 auto; padding:28px 24px 60px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  @media(max-width:900px){ .grid3,.grid4{ grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:600px){ .grid2,.grid3,.grid4{ grid-template-columns:1fr; } }
+
+  /* ── HEADER ── */
+  .page-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:28px; padding-bottom:20px;
+    border-bottom:2px solid var(--border);
+    flex-wrap:wrap; gap:12px;
+  }
+  .page-title { display:flex; align-items:center; gap:12px; }
+  .page-title .emoji { font-size:28px; }
+  .page-title h1 { font-size:22px; font-weight:900; color:var(--text1); line-height:1.2; }
+  .page-title .sub { font-size:12px; color:var(--text3); margin-top:2px; }
+  .header-badges { display:flex; gap:8px; flex-wrap:wrap; }
+  .badge { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:700; }
+  .badge-red   { background:var(--red-l);   color:var(--red);   border:1px solid var(--red-m); }
+  .badge-amber { background:var(--amber-l); color:var(--amber); border:1px solid var(--amber-m); }
+  .badge-blue  { background:var(--blue-l);  color:var(--blue);  border:1px solid var(--blue-m); }
+  .badge-green { background:var(--green-l); color:var(--green); border:1px solid var(--green-m); }
+
+  /* ── SECTION TABS ── */
+  .tabs { display:flex; gap:0; margin-bottom:24px; border:1.5px solid var(--border); border-radius:var(--r2); overflow:hidden; background:var(--surface); }
+  .tab-btn {
+    flex:1; padding:14px 10px; border:none; background:transparent;
+    cursor:pointer; font-family:inherit; font-size:13px; font-weight:600;
+    color:var(--text3); transition:all .18s; display:flex; flex-direction:column;
+    align-items:center; gap:4px; border-right:1px solid var(--border);
+  }
+  .tab-btn:last-child { border-right:none; }
+  .tab-btn.active { background:var(--surface2); color:var(--text1); }
+  .tab-btn .tab-icon { font-size:20px; }
+  .tab-btn .tab-label { font-size:13px; font-weight:700; }
+  .tab-btn .tab-sub { font-size:10px; font-weight:400; }
+  .tab-btn.active.blue  { background:var(--blue-l);  color:var(--blue);  }
+  .tab-btn.active.green { background:var(--green-l); color:var(--green); }
+  .tab-btn.active.amber { background:var(--amber-l); color:var(--amber); }
+
+  /* ── SECTION CONTENT ── */
+  .section-content { display:none; }
+  .section-content.active { display:block; }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:20px; flex-wrap:wrap; gap:10px;
+  }
+  .section-title-row { display:flex; align-items:center; gap:10px; }
+  .section-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+  .section-name { font-size:18px; font-weight:800; }
+  .section-meta { font-size:12px; color:var(--text3); margin-top:1px; }
+  .exec-chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .exec-chip {
+    padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;
+    border:1.5px solid; cursor:default;
+  }
+
+  /* ── KPI CARDS ── */
+  .kpi-section { margin-bottom:24px; }
+  .section-label {
+    font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--text3); margin-bottom:10px; display:flex; align-items:center; gap:6px;
+  }
+  .section-label::before { content:''; display:block; width:3px; height:14px; border-radius:2px; background:currentColor; }
+
+  .kpi-card {
+    background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r2);
+    padding:16px; box-shadow:var(--shadow); transition:box-shadow .15s, transform .15s;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .kpi-card:hover { box-shadow:var(--shadow2); transform:translateY(-1px); }
+  .kpi-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .kpi-info { flex:1; }
+  .kpi-desc { font-size:10px; color:var(--text3); margin-bottom:3px; }
+  .kpi-name { font-size:13px; font-weight:700; color:var(--text1); }
+  .gauge-wrap { position:relative; width:60px; height:60px; flex-shrink:0; }
+  .gauge-wrap svg { transform:rotate(-90deg); }
+  .gauge-center {
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+  }
+  .gauge-pct { font-size:12px; font-weight:800; line-height:1; }
+  .kpi-values { display:flex; justify-content:space-between; align-items:flex-end; }
+  .kpi-current { display:flex; align-items:baseline; gap:3px; }
+  .kpi-current .val { font-size:20px; font-weight:900; line-height:1; }
+  .kpi-current .unit { font-size:11px; font-weight:500; color:var(--text3); }
+  .kpi-target { text-align:right; }
+  .kpi-target .lbl { font-size:9px; color:var(--text3); }
+  .kpi-target .tval { font-size:12px; font-weight:600; color:var(--text2); }
+  .status-pill {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:3px 8px; border-radius:5px; font-size:10px; font-weight:700; border:1px solid;
+  }
+
+  /* ── TASK PANELS ── */
+  .tasks-section { display:flex; flex-direction:column; gap:12px; }
+  .task-card {
+    background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r2);
+    box-shadow:var(--shadow); overflow:hidden; transition:box-shadow .15s;
+  }
+  .task-card:hover { box-shadow:var(--shadow2); }
+  .task-head {
+    display:flex; align-items:center; gap:12px; padding:14px 16px;
+    cursor:pointer; user-select:none; border-bottom:1px solid transparent;
+    transition:background .15s; background:var(--surface);
+  }
+  .task-head:hover { background:#FAFAF8; }
+  .task-head.open { border-bottom-color:var(--border); }
+  .task-icon {
+    width:36px; height:36px; border-radius:var(--r); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:900;
+    border:1.5px solid;
+  }
+  .task-info { flex:1; min-width:0; }
+  .task-name { font-size:13px; font-weight:700; margin-bottom:2px; }
+  .task-detail { font-size:11px; color:var(--text3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .task-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .task-kpi-tags { display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; max-width:180px; }
+  .kpi-tag {
+    font-size:9px; padding:2px 7px; border-radius:4px; background:#F1F0ED;
+    color:var(--text3); border:1px solid var(--border); white-space:nowrap;
+  }
+  .task-pct { text-align:right; min-width:50px; }
+  .task-pct .num { font-size:20px; font-weight:900; line-height:1; }
+  .task-pct .sub { font-size:9px; color:var(--text3); }
+  .task-arrow { color:var(--text3); font-size:14px; transition:transform .2s; }
+  .task-arrow.open { transform:rotate(180deg); }
+
+  .task-body { display:none; padding:12px 16px 16px; background:#FAFAF9; }
+  .task-body.open { display:block; }
+  .assignee-list { display:flex; flex-direction:column; gap:6px; }
+
+  .assignee-row {
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    border-radius:var(--r); border:1.5px solid; transition:background .12s;
+  }
+  .assignee-row:hover { filter:brightness(.97); }
+  .av {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; border:2px solid;
+  }
+  .assignee-name-col { width:68px; flex-shrink:0; }
+  .a-name { font-size:12px; font-weight:700; color:var(--text1); }
+  .a-role { font-size:10px; }
+  .lead-tag {
+    display:inline-block; font-size:9px; font-weight:700; padding:1px 5px;
+    border-radius:3px; margin-top:1px;
+  }
+  .progress-col { flex:1; }
+  .prog-bar-bg { background:#EEE; border-radius:99px; height:6px; overflow:hidden; }
+  .prog-bar-fill { height:100%; border-radius:99px; transition:width .8s ease; }
+  .prog-bar-labels { display:flex; justify-content:space-between; margin-top:3px; }
+  .prog-bar-labels span { font-size:9px; color:var(--text3); }
+  .value-col { text-align:right; min-width:80px; flex-shrink:0; }
+  .v-current { font-size:14px; font-weight:800; line-height:1; }
+  .v-target  { font-size:10px; color:var(--text3); }
+  .status-col { min-width:52px; text-align:center; flex-shrink:0; }
+
+  /* ── STATUS COLORS ── */
+  .s-완료 { --sc:var(--green); --sl:var(--green-l); --sm:var(--green-m); }
+  .s-정상 { --sc:var(--blue);  --sl:var(--blue-l);  --sm:var(--blue-m); }
+  .s-지연 { --sc:var(--amber); --sl:var(--amber-l); --sm:var(--amber-m); }
+  .s-이슈 { --sc:var(--red);   --sl:var(--red-l);   --sm:var(--red-m); }
+
+  .assignee-row.s-정상 { background:var(--blue-l);  border-color:var(--blue-m); }
+  .assignee-row.s-지연 { background:var(--amber-l); border-color:var(--amber-m); }
+  .assignee-row.s-이슈 { background:var(--red-l);   border-color:var(--red-m); }
+  .assignee-row.s-완료 { background:var(--green-l); border-color:var(--green-m); }
+
+  .status-pill.s-완료 { background:var(--green-l); color:var(--green); border-color:var(--green-m); }
+  .status-pill.s-정상 { background:var(--blue-l);  color:var(--blue);  border-color:var(--blue-m); }
+  .status-pill.s-지연 { background:var(--amber-l); color:var(--amber); border-color:var(--amber-m); }
+  .status-pill.s-이슈 { background:var(--red-l);   color:var(--red);   border-color:var(--red-m); }
+
+  .av.s-완료 { background:var(--green-l); color:var(--green); border-color:var(--green-m); }
+  .av.s-정상 { background:var(--blue-l);  color:var(--blue);  border-color:var(--blue-m); }
+  .av.s-지연 { background:var(--amber-l); color:var(--amber); border-color:var(--amber-m); }
+  .av.s-이슈 { background:var(--red-l);   color:var(--red);   border-color:var(--red-m); }
+
+  .task-icon.s-완료 { background:var(--green-l); color:var(--green); border-color:var(--green-m); }
+  .task-icon.s-정상 { background:var(--blue-l);  color:var(--blue);  border-color:var(--blue-m); }
+  .task-icon.s-지연 { background:var(--amber-l); color:var(--amber); border-color:var(--amber-m); }
+  .task-icon.s-이슈 { background:var(--red-l);   color:var(--red);   border-color:var(--red-m); }
+
+  .task-pct.s-완료 .num { color:var(--green); }
+  .task-pct.s-정상 .num { color:var(--blue);  }
+  .task-pct.s-지연 .num { color:var(--amber); }
+  .task-pct.s-이슈 .num { color:var(--red);   }
+
+  /* SECTION COLORS */
+  .c-blue  { color:var(--blue);  }
+  .c-green { color:var(--green); }
+  .c-amber { color:var(--amber); }
+
+  /* ── MATRIX ── */
+  .matrix-wrap { margin-top:24px; }
+  .matrix-toggle {
+    background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r);
+    padding:10px 16px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:700;
+    color:var(--text2); width:100%; text-align:left; display:flex; justify-content:space-between;
+    align-items:center; box-shadow:var(--shadow);
+  }
+  .matrix-toggle:hover { background:#F7F6F3; }
+  .matrix-body { display:none; margin-top:8px; overflow-x:auto; }
+  .matrix-body.open { display:block; }
+  .matrix-table { width:100%; border-collapse:collapse; font-size:11px; }
+  .matrix-table th, .matrix-table td { padding:8px 10px; border:1px solid var(--border); text-align:center; white-space:nowrap; }
+  .matrix-table th { background:#F1EFF9; font-weight:700; color:var(--text2); }
+  .matrix-table th.exec-col { text-align:left; }
+  .matrix-table td.exec-name { font-weight:700; color:var(--text1); text-align:left; background:var(--surface); }
+  .matrix-table td.empty { color:#DDD; }
+  .m-cell { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .m-role { font-size:9px; padding:1px 5px; border-radius:3px; font-weight:700; }
+  .m-role.lead { background:#FFF0D0; color:#8A5000; }
+  .m-role.co   { background:#EEF2FF; color:var(--blue); }
+  .m-role.part { background:#F0FFF4; color:var(--green); }
+  .m-pct { font-size:11px; font-weight:800; }
+
+  /* ── HOW TO USE ── */
+  .howto {
+    background:var(--blue-l); border:1.5px solid var(--blue-m); border-radius:var(--r2);
+    padding:16px 20px; margin-bottom:24px;
+  }
+  .howto h3 { font-size:13px; font-weight:700; color:var(--blue); margin-bottom:8px; }
+  .howto ol { padding-left:18px; display:flex; flex-direction:column; gap:4px; }
+  .howto li { font-size:12px; color:var(--text2); line-height:1.6; }
+  .howto code { background:#D6E4FF; color:var(--blue); padding:1px 5px; border-radius:3px; font-family:monospace; font-size:11px; }
+
+  /* ── FOOTER ── */
+  .footer { margin-top:48px; padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .footer-text { font-size:11px; color:var(--text3); }
+
+  /* ── PRINT ── */
+  @media print {
+    .howto, .matrix-wrap { display:none; }
+    .task-body { display:block !important; }
+    .section-content { display:block !important; }
+    .tabs { display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-title">
+      <span class="emoji">🔥</span>
+      <div>
+        <h1>한화생명 손익 성과 관리</h1>
+        <div class="sub">재무지표 · 보험손익 · 상품손익 | 2026 전략과제 진행 현황</div>
+      </div>
+    </div>
+    <div class="header-badges" id="header-badges">
+      <!-- JS로 채움 -->
+    </div>
+  </div>
+
+  <!-- HOW TO USE IN NOTION -->
+  <div class="howto">
+    <h3>📌 Notion 활용 안내</h3>
+    <ol>
+      <li>이 파일을 웹 서버에 호스팅하거나 <strong>GitHub Pages / Vercel / Netlify</strong> 등에 배포하세요.</li>
+      <li>Notion 페이지에서 <code>/embed</code> 블록 삽입 → URL 붙여넣기 → <strong>Create embed</strong> 클릭</li>
+      <li>임베드 블록을 <strong>Full-width</strong>로 설정하고 높이를 충분히 조정하면 최적으로 표시됩니다.</li>
+      <li>탭 클릭으로 재무지표 / 보험손익 / 상품손익 전환, 각 과제 클릭으로 담당 임원 상세 확인 가능.</li>
+    </ol>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active blue" data-section="financial" onclick="switchTab('financial')">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">재무지표</span>
+      <span class="tab-sub">김중원 · 윤종국 · 박수원 · 김준일</span>
+    </button>
+    <button class="tab-btn green" data-section="insurance" onclick="switchTab('insurance')">
+      <span class="tab-icon">🛡️</span>
+      <span class="tab-label">보험손익</span>
+      <span class="tab-sub">신충호 · 전준수 · 김국진 · 한승의 · 서영범</span>
+    </button>
+    <button class="tab-btn amber" data-section="product" onclick="switchTab('product')">
+      <span class="tab-icon">💊</span>
+      <span class="tab-label">상품손익</span>
+      <span class="tab-sub">이종호</span>
+    </button>
+  </div>
+
+  <!-- ══════════════════ SECTION: 재무지표 ══════════════════ -->
+  <div class="section-content active" id="sec-financial">
+    <div class="section-header">
+      <div class="section-title-row">
+        <div class="section-dot" style="background:var(--blue)"></div>
+        <div>
+          <div class="section-name c-blue">재무지표</div>
+          <div class="section-meta">K-ICS · CSM · 자본건전성 · 재무구조 최적화</div>
+        </div>
+      </div>
+      <div class="exec-chips">
+        <span class="exec-chip" style="color:var(--blue);border-color:var(--blue-m);background:var(--blue-l)">김중원</span>
+        <span class="exec-chip" style="color:var(--blue);border-color:var(--blue-m);background:var(--blue-l)">윤종국</span>
+        <span class="exec-chip" style="color:var(--blue);border-color:var(--blue-m);background:var(--blue-l)">박수원</span>
+        <span class="exec-chip" style="color:var(--blue);border-color:var(--blue-m);background:var(--blue-l)">김준일</span>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-section">
+      <div class="section-label" style="color:var(--blue)">핵심 성과 지표 (KPI)</div>
+      <div class="grid4">
+        <div class="kpi-card" id="kpi-kics"></div>
+        <div class="kpi-card" id="kpi-csm"></div>
+        <div class="kpi-card" id="kpi-capital"></div>
+        <div class="kpi-card" id="kpi-subsidiary"></div>
+      </div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="section-label" style="color:var(--blue)">담당 임원별 과제 진행 현황</div>
+    <div class="tasks-section" id="tasks-financial"></div>
+  </div>
+
+  <!-- ══════════════════ SECTION: 보험손익 ══════════════════ -->
+  <div class="section-content" id="sec-insurance">
+    <div class="section-header">
+      <div class="section-title-row">
+        <div class="section-dot" style="background:var(--green)"></div>
+        <div>
+          <div class="section-name c-green">보험손익</div>
+          <div class="section-meta">신계약CSM · 계속보험료 · 손해율 · FP 가동인원</div>
+        </div>
+      </div>
+      <div class="exec-chips">
+        <span class="exec-chip" style="color:var(--green);border-color:var(--green-m);background:var(--green-l)">신충호</span>
+        <span class="exec-chip" style="color:var(--green);border-color:var(--green-m);background:var(--green-l)">전준수</span>
+        <span class="exec-chip" style="color:var(--green);border-color:var(--green-m);background:var(--green-l)">김국진</span>
+        <span class="exec-chip" style="color:var(--green);border-color:var(--green-m);background:var(--green-l)">한승의</span>
+        <span class="exec-chip" style="color:var(--green);border-color:var(--green-m);background:var(--green-l)">서영범</span>
+      </div>
+    </div>
+
+    <div class="kpi-section">
+      <div class="section-label" style="color:var(--green)">핵심 성과 지표 (KPI)</div>
+      <div class="grid4">
+        <div class="kpi-card" id="kpi-newcsm"></div>
+        <div class="kpi-card" id="kpi-persist"></div>
+        <div class="kpi-card" id="kpi-loss"></div>
+        <div class="kpi-card" id="kpi-fp"></div>
+      </div>
+    </div>
+
+    <div class="section-label" style="color:var(--green)">담당 임원별 과제 진행 현황</div>
+    <div class="tasks-section" id="tasks-insurance"></div>
+  </div>
+
+  <!-- ══════════════════ SECTION: 상품손익 ══════════════════ -->
+  <div class="section-content" id="sec-product">
+    <div class="section-header">
+      <div class="section-title-row">
+        <div class="section-dot" style="background:var(--amber)"></div>
+        <div>
+          <div class="section-name c-amber">상품손익</div>
+          <div class="section-meta">치매보험 신계약 · M/S · 보험료 수익 · CSM 기여</div>
+        </div>
+      </div>
+      <div class="exec-chips">
+        <span class="exec-chip" style="color:var(--amber);border-color:var(--amber-m);background:var(--amber-l)">이종호</span>
+      </div>
+    </div>
+
+    <div class="kpi-section">
+      <div class="section-label" style="color:var(--amber)">핵심 성과 지표 (KPI)</div>
+      <div class="grid4">
+        <div class="kpi-card" id="kpi-dementia"></div>
+        <div class="kpi-card" id="kpi-mshare"></div>
+        <div class="kpi-card" id="kpi-premium"></div>
+        <div class="kpi-card" id="kpi-csm-prod"></div>
+      </div>
+    </div>
+
+    <div class="section-label" style="color:var(--amber)">담당 임원별 과제 진행 현황</div>
+    <div class="tasks-section" id="tasks-product"></div>
+  </div>
+
+  <!-- MATRIX -->
+  <div class="matrix-wrap">
+    <button class="matrix-toggle" onclick="toggleMatrix()">
+      <span>📋 임원 × 과제 배정 매트릭스 전체 보기</span>
+      <span id="matrix-arrow">▼</span>
+    </button>
+    <div class="matrix-body" id="matrix-body">
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r2);padding:4px;box-shadow:var(--shadow)">
+        <table class="matrix-table" id="matrix-table"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="footer-text">🔥 한화생명 전략과제 관리 · 2026</span>
+    <span class="footer-text" id="footer-updated"></span>
+  </div>
+</div>
+
+<script>
+/* ══ DATA ═══════════════════════════════════════════════════════════════ */
+const ST = {
+  완료: { color:'var(--green)', light:'var(--green-l)', mid:'var(--green-m)', icon:'✓' },
+  정상: { color:'var(--blue)',  light:'var(--blue-l)',  mid:'var(--blue-m)',  icon:'→' },
+  지연: { color:'var(--amber)', light:'var(--amber-l)', mid:'var(--amber-m)', icon:'⚠' },
+  이슈: { color:'var(--red)',   light:'var(--red-l)',   mid:'var(--red-m)',   icon:'!' },
+};
+
+const KPIS = {
+  // 재무
+  kics:       { id:'kics',       label:'K-ICS 비율',     desc:'지급여력비율 목표',      unit:'%',   target:180,   current:174.2, inv:false },
+  csm:        { id:'csm',        label:'CSM 잔액',       desc:'계약서비스마진 잔액',     unit:'조원', target:12.0,  current:10.2,  inv:false },
+  capital:    { id:'capital',    label:'자본 건전성',     desc:'재무구조 최적화 진척도',  unit:'%',   target:100,   current:78,    inv:false },
+  subsidiary: { id:'subsidiary', label:'자회사 유상증자', desc:'유상증자 업무 지원',      unit:'억원', target:3000,  current:2160,  inv:false },
+  // 보험
+  newcsm:     { id:'newcsm',     label:'신계약 CSM',     desc:'신계약 CSM 목표',        unit:'억원', target:8500,  current:6200,  inv:false },
+  persist:    { id:'persist',    label:'계속보험료',      desc:'보험료 수익 유지',        unit:'억원', target:25000, current:21500, inv:false },
+  loss:       { id:'loss',       label:'손해율',          desc:'보험 손해율 (낮을수록 好)', unit:'%', target:82.0,  current:83.2,  inv:true  },
+  fp:         { id:'fp',         label:'FP 가동인원',     desc:'가동조직 상시 4만명',     unit:'만명', target:4.0,   current:3.2,   inv:false },
+  // 상품
+  dementia:   { id:'dementia',   label:'치매보험 신계약', desc:'치매/간병 전문 신계약',   unit:'억원', target:2800,  current:1610,  inv:false },
+  mshare:     { id:'mshare',     label:'치매보험 M/S',   desc:'치매보험 시장점유율',     unit:'%',   target:25.0,  current:18.4,  inv:false },
+  premium:    { id:'premium',    label:'보험료 수익',     desc:'치매 전문 보험료 수익',   unit:'억원', target:4500,  current:2610,  inv:false },
+  'csm-prod': { id:'csm-prod',   label:'상품 CSM 기여',  desc:'상품별 CSM 기여도',       unit:'억원', target:1200,  current:680,   inv:false },
+};
+
+const SECTIONS_DATA = {
+  financial: {
+    color:'var(--blue)', cname:'blue',
+    kpiIds:['kics','csm','capital','subsidiary'],
+    tasks:[
+      { id:'f1', name:'재무구조 최적화', detail:'자회사 유상증자 업무 지원 및 재무건전성 제고',
+        kpis:['capital','subsidiary'],
+        assignees:[
+          { name:'윤종국', role:'담당', target:100, current:72, unit:'%', status:'정상' },
+          { name:'김중원', role:'공동', target:100, current:68, unit:'%', status:'정상' },
+        ]},
+      { id:'f2', name:'금융 플랫폼 이니셔티브', detail:'금융 플랫폼 통합 체계 구축 및 운영',
+        kpis:['capital'],
+        assignees:[
+          { name:'윤종국', role:'담당', target:100, current:55, unit:'%', status:'지연' },
+          { name:'김중원', role:'공동', target:100, current:50, unit:'%', status:'지연' },
+        ]},
+      { id:'f3', name:'K-ICS 비율 관리',  detail:'지급여력비율 180% 이상 유지 및 자본효율 개선',
+        kpis:['kics'],
+        assignees:[
+          { name:'박수원', role:'담당', target:180,  current:164,  unit:'%', status:'지연' },
+          { name:'김준일', role:'공동', target:180,  current:171,  unit:'%', status:'정상' },
+          { name:'김중원', role:'참여', target:180,  current:158,  unit:'%', status:'이슈' },
+        ]},
+      { id:'f4', name:'CSM 잔액 확대', detail:'보유계약 CSM 순증 및 잔액 목표 달성',
+        kpis:['csm'],
+        assignees:[
+          { name:'박수원', role:'담당', target:12.0, current:10.2, unit:'조원', status:'정상' },
+          { name:'김준일', role:'공동', target:12.0, current: 9.8, unit:'조원', status:'지연' },
+        ]},
+    ]
+  },
+  insurance: {
+    color:'var(--green)', cname:'green',
+    kpiIds:['newcsm','persist','loss','fp'],
+    tasks:[
+      { id:'i1', name:'보험손익 개선', detail:'보험손익 개선 및 보유계약 CSM 순증',
+        kpis:['newcsm','persist','loss'],
+        assignees:[
+          { name:'신충호', role:'담당', target:100, current:65, unit:'%', status:'정상' },
+          { name:'전준수', role:'공동', target:100, current:62, unit:'%', status:'정상' },
+        ]},
+      { id:'i2', name:'FP 조직 확대', detail:'가동조직 상시 4만명 체계 구축',
+        kpis:['fp'],
+        assignees:[
+          { name:'신충호', role:'담당', target:4.0, current:3.2, unit:'만명', status:'지연' },
+          { name:'전준수', role:'공동', target:4.0, current:3.2, unit:'만명', status:'지연' },
+          { name:'한승의', role:'공동', target:4.0, current:3.4, unit:'만명', status:'지연' },
+          { name:'서영범', role:'공동', target:4.0, current:3.1, unit:'만명', status:'이슈' },
+        ]},
+      { id:'i3', name:'방카 보장성 포트폴리오 전환', detail:'보장성보험 중심 포트폴리오 전환으로 손익 성장 구조 확립',
+        kpis:['newcsm','persist'],
+        assignees:[
+          { name:'신충호', role:'담당', target:100,  current:78,   unit:'%', status:'정상' },
+          { name:'김국진', role:'공동', target:100,  current:74,   unit:'%', status:'정상' },
+        ]},
+      { id:'i4', name:'신계약 CSM 확대 기반 판매 전략', detail:'신계약 CSM 확대 기반 판매 전략 수립 및 보험손익 가치 제고',
+        kpis:['newcsm','loss'],
+        assignees:[
+          { name:'전준수', role:'담당', target:8500, current:6200, unit:'억원', status:'정상' },
+          { name:'김국진', role:'공동', target:8500, current:5800, unit:'억원', status:'정상' },
+          { name:'한승의', role:'참여', target:8500, current:5500, unit:'억원', status:'정상' },
+          { name:'서영범', role:'참여', target:8500, current:5100, unit:'억원', status:'지연' },
+        ]},
+      { id:'i5', name:'AI 기반 영업지원 체계', detail:'AI STS, AICC, AI OCR 등 AI를 활용한 영업지원 인프라 구축',
+        kpis:['fp'],
+        assignees:[
+          { name:'전준수', role:'담당', target:100, current:42, unit:'%', status:'지연' },
+        ]},
+    ]
+  },
+  product: {
+    color:'var(--amber)', cname:'amber',
+    kpiIds:['dementia','mshare','premium','csm-prod'],
+    tasks:[
+      { id:'p1', name:'치매/간병 전문 보험사 포지셔닝', detail:'치매/간병시장 리딩을 통해 치매 명가 도약 추진',
+        kpis:['dementia','mshare','premium','csm-prod'],
+        assignees:[
+          { name:'이종호', role:'담당', target:100, current:58, unit:'%', status:'정상' },
+        ]},
+      { id:'p2', name:'치매 신계약 CSM 목표 달성', detail:'치매/간병보험 신계약 CSM 기여도 확대 및 손익 구조 개선',
+        kpis:['csm-prod','dementia'],
+        assignees:[
+          { name:'이종호', role:'담당', target:1200, current:680, unit:'억원', status:'정상' },
+        ]},
+      { id:'p3', name:'치매보험 시장점유율 확대', detail:'치매보험 M/S 25% 달성을 통한 시장 리더십 확보',
+        kpis:['mshare'],
+        assignees:[
+          { name:'이종호', role:'담당', target:25, current:18.4, unit:'%', status:'지연' },
+        ]},
+    ]
+  }
+};
+
+/* ══ HELPERS ═══════════════════════════════════════════════════════════ */
+function fmt(v, unit) {
+  if (unit==='조원') return v.toFixed(1);
+  if (unit==='%' || unit==='만명') return v.toFixed(1);
+  return v.toLocaleString();
+}
+function pct(cur, tgt, inv) {
+  const r = inv ? (tgt / cur) * 100 : (cur / tgt) * 100;
+  return Math.min(Math.round(r), 100);
+}
+function taskWorstStatus(task) {
+  if (task.assignees.some(a=>a.status==='이슈')) return '이슈';
+  if (task.assignees.some(a=>a.status==='지연')) return '지연';
+  if (task.assignees.every(a=>a.status==='완료')) return '완료';
+  return '정상';
+}
+function taskAvgPct(task) {
+  const s = task.assignees.reduce((acc,a)=>acc+pct(a.current,a.target,false),0);
+  return Math.round(s/task.assignees.length);
+}
+
+/* ══ RENDER: GAUGE ════════════════════════════════════════════════════ */
+function renderGauge(p, colorVar) {
+  const r=26, circ=2*Math.PI*r, dash=Math.min(p/100,1)*circ;
+  // resolve CSS var for stroke — use fallback hex
+  const colorMap = {
+    'var(--blue)':'#2B5BE2','var(--green)':'#0A8754','var(--amber)':'#D97706','var(--red)':'#DC2626'
+  };
+  const col = colorMap[colorVar] || '#2B5BE2';
+  return `<svg width="60" height="60" viewBox="0 0 60 60" style="transform:rotate(-90deg)">
+    <circle cx="30" cy="30" r="${r}" fill="none" stroke="#EEE" stroke-width="7"/>
+    <circle cx="30" cy="30" r="${r}" fill="none" stroke="${col}" stroke-width="7"
+      stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"
+      style="transition:stroke-dasharray .8s ease"/>
+  </svg>`;
+}
+
+/* ══ RENDER: KPI CARD ═══════════════════════════════════════════════ */
+function renderKpiCard(kId, sectionColor) {
+  const k = KPIS[kId]; if(!k) return;
+  const el = document.getElementById('kpi-'+kId); if(!el) return;
+  const p = pct(k.current, k.target, k.inv);
+  const st = p>=90?'완료':p>=70?'정상':p>=50?'지연':'이슈';
+  const stCfg = ST[st];
+  // resolve color var
+  const colorMap={'var(--green)':'#0A8754','var(--blue)':'#2B5BE2','var(--amber)':'#D97706','var(--red)':'#DC2626'};
+  const col = colorMap[stCfg.color] || '#2B5BE2';
+  el.innerHTML = `
+    <div class="kpi-top">
+      <div class="kpi-info">
+        <div class="kpi-desc">${k.desc}</div>
+        <div class="kpi-name">${k.label}</div>
+        <div style="margin-top:6px">
+          <span class="status-pill s-${st}">${stCfg.icon} ${st}</span>
+        </div>
+      </div>
+      <div class="gauge-wrap">
+        ${renderGauge(p, stCfg.color)}
+        <div class="gauge-center">
+          <span class="gauge-pct" style="color:${col}">${p}%</span>
+        </div>
+      </div>
+    </div>
+    <div class="kpi-values">
+      <div class="kpi-current">
+        <span class="val" style="color:${col}">${fmt(k.current,k.unit)}</span>
+        <span class="unit">${k.unit}</span>
+      </div>
+      <div class="kpi-target">
+        <div class="lbl">목표</div>
+        <div class="tval">${fmt(k.target,k.unit)}${k.unit}</div>
+      </div>
+    </div>`;
+}
+
+/* ══ RENDER: TASK PANEL ═════════════════════════════════════════════ */
+function renderTasks(secId) {
+  const sec = SECTIONS_DATA[secId];
+  const container = document.getElementById('tasks-'+secId);
+  container.innerHTML = '';
+  const colorMap={'var(--blue)':'#2B5BE2','var(--green)':'#0A8754','var(--amber)':'#D97706'};
+  const col = colorMap[sec.color] || '#2B5BE2';
+
+  sec.tasks.forEach((task, ti) => {
+    const ws = taskWorstStatus(task);
+    const ap = taskAvgPct(task);
+    const kpiLabels = task.kpis.map(k=>KPIS[k]?.label||k);
+
+    const assigneesHTML = task.assignees.map(a=>{
+      const p2 = pct(a.current, a.target, false);
+      const colorMap2={'var(--green)':'#0A8754','var(--blue)':'#2B5BE2','var(--amber)':'#D97706','var(--red)':'#DC2626'};
+      const sc2 = colorMap2[ST[a.status].color]||'#2B5BE2';
+      const isLead = a.role==='담당';
+      return `<div class="assignee-row s-${a.status}">
+        <div class="av s-${a.status}">${a.name[0]}</div>
+        <div class="assignee-name-col">
+          <div class="a-name">${a.name}</div>
+          ${isLead?`<span class="lead-tag" style="background:${col}20;color:${col}">★담당</span>`:`<div class="a-role" style="color:${sc2}">${a.role}</div>`}
+        </div>
+        <div class="progress-col">
+          <div class="prog-bar-bg">
+            <div class="prog-bar-fill" style="width:${p2}%;background:${sc2}"></div>
+          </div>
+          <div class="prog-bar-labels">
+            <span>0</span><span style="color:${sc2};font-weight:700">${p2}%</span>
+          </div>
+        </div>
+        <div class="value-col">
+          <div class="v-current" style="color:${sc2}">${fmt(a.current,a.unit)}<span style="font-size:10px;font-weight:400;margin-left:2px">${a.unit}</span></div>
+          <div class="v-target">목표 ${fmt(a.target,a.unit)}${a.unit}</div>
+        </div>
+        <div class="status-col">
+          <span class="status-pill s-${a.status}">${ST[a.status].icon} ${a.status}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    const div = document.createElement('div');
+    div.className = 'task-card';
+    div.innerHTML = `
+      <div class="task-head" id="th-${secId}-${ti}" onclick="toggleTask('${secId}','${ti}')">
+        <div class="task-icon s-${ws}">${ST[ws].icon}</div>
+        <div class="task-info">
+          <div class="task-name">${task.name}</div>
+          <div class="task-detail">${task.detail}</div>
+        </div>
+        <div class="task-right">
+          <div class="task-kpi-tags">${kpiLabels.map(l=>`<span class="kpi-tag">${l}</span>`).join('')}</div>
+          <div class="task-pct s-${ws}">
+            <div class="num">${ap}%</div>
+            <div class="sub">평균달성</div>
+          </div>
+          <div class="task-arrow" id="ta-${secId}-${ti}">▾</div>
+        </div>
+      </div>
+      <div class="task-body" id="tb-${secId}-${ti}">
+        <div class="assignee-list">${assigneesHTML}</div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+/* ══ RENDER: KPIs PER SECTION ════════════════════════════════════════ */
+function renderSectionKpis(secId) {
+  const sec = SECTIONS_DATA[secId];
+  sec.kpiIds.forEach(kid => renderKpiCard(kid, sec.color));
+}
+
+/* ══ RENDER: MATRIX ═════════════════════════════════════════════════ */
+function renderMatrix() {
+  const allTasks = [];
+  Object.entries(SECTIONS_DATA).forEach(([sid,sec])=>{
+    sec.tasks.forEach(t=> allTasks.push({...t, secId:sid, secColor:sec.color, secName:{financial:'재무',insurance:'보험',product:'상품'}[sid]}));
+  });
+  const allExecs = [...new Set(
+    Object.values(SECTIONS_DATA).flatMap(s=>s.tasks.flatMap(t=>t.assignees.map(a=>a.name)))
+  )];
+
+  const colorMap={'var(--blue)':'#2B5BE2','var(--green)':'#0A8754','var(--amber)':'#D97706'};
+
+  let html = '<thead><tr><th class="exec-col">임원</th>';
+  allTasks.forEach(t=>{
+    const col = colorMap[t.secColor]||'#2B5BE2';
+    const short = t.name.length>10 ? t.name.slice(0,10)+'…' : t.name;
+    html += `<th><div style="font-size:9px;color:#888;margin-bottom:2px">${t.secName}</div><div style="color:${col}">${short}</div></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  allExecs.forEach(exec=>{
+    html += `<tr><td class="exec-name">${exec}</td>`;
+    allTasks.forEach(t=>{
+      const a = t.assignees.find(x=>x.name===exec);
+      if(a){
+        const p2 = pct(a.current,a.target,false);
+        const sc2 = colorMap[ST[a.status].color]||'#2B5BE2';
+        const roleClass = a.role==='담당'?'lead':a.role==='공동'?'co':'part';
+        const roleLabel = a.role==='담당'?'★담당':a.role;
+        html += `<td><div class="m-cell"><span class="m-role ${roleClass}">${roleLabel}</span><span class="m-pct" style="color:${sc2}">${p2}%</span></div></td>`;
+      } else { html += `<td class="empty">—</td>`; }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('matrix-table').innerHTML = html;
+}
+
+/* ══ RENDER: HEADER BADGES ═══════════════════════════════════════════ */
+function renderHeaderBadges() {
+  const allAssignees = Object.values(SECTIONS_DATA).flatMap(s=>s.tasks.flatMap(t=>t.assignees));
+  const issueCount = allAssignees.filter(a=>a.status==='이슈').length;
+  const delayCount = allAssignees.filter(a=>a.status==='지연').length;
+  const totalPct = Math.round(allAssignees.reduce((s,a)=>s+pct(a.current,a.target,false),0)/allAssignees.length);
+  const doneCount = allAssignees.filter(a=>a.status==='완료').length;
+  const el = document.getElementById('header-badges');
+  el.innerHTML = `
+    ${issueCount>0?`<span class="badge badge-red">🚨 이슈 ${issueCount}건</span>`:''}
+    ${delayCount>0?`<span class="badge badge-amber">⚠ 지연 ${delayCount}건</span>`:''}
+    ${doneCount>0?`<span class="badge badge-green">✓ 완료 ${doneCount}건</span>`:''}
+    <span class="badge badge-blue">전체 ${totalPct}% 달성</span>`;
+}
+
+/* ══ INTERACTIONS ════════════════════════════════════════════════════ */
+function switchTab(secId) {
+  document.querySelectorAll('.section-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('sec-'+secId).classList.add('active');
+  document.querySelector(`[data-section="${secId}"]`).classList.add('active');
+  renderSectionKpis(secId);
+}
+
+function toggleTask(secId, ti) {
+  const body = document.getElementById(`tb-${secId}-${ti}`);
+  const head = document.getElementById(`th-${secId}-${ti}`);
+  const arrow = document.getElementById(`ta-${secId}-${ti}`);
+  body.classList.toggle('open');
+  head.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function toggleMatrix() {
+  const body = document.getElementById('matrix-body');
+  const arrow = document.getElementById('matrix-arrow');
+  body.classList.toggle('open');
+  arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
+  if(body.classList.contains('open')) renderMatrix();
+}
+
+/* ══ INIT ════════════════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', ()=>{
+  renderHeaderBadges();
+  // Render all sections
+  ['financial','insurance','product'].forEach(sid=>{
+    renderSectionKpis(sid);
+    renderTasks(sid);
+  });
+  // Open first task in each section
+  ['financial','insurance','product'].forEach(sid=>{
+    const first = document.getElementById(`tb-${sid}-0`);
+    const firstH = document.getElementById(`th-${sid}-0`);
+    const firstA = document.getElementById(`ta-${sid}-0`);
+    if(first){ first.classList.add('open'); firstH?.classList.add('open'); firstA?.classList.add('open'); }
+  });
+  // Footer date
+  const now = new Date();
+  document.getElementById('footer-updated').textContent =
+    `기준일: ${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+});
+</script>
+</body>
+</html>
